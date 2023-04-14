@@ -1,0 +1,26 @@
+{
+  "name": "mmo-gpt",
+  "version": "0.0.1",
+  "description": "Experiment to make several people interact with GPT and create a history together",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arthurborgesdev/mmo-gpt.git"
+  },
+  "keywords": [
+    "mmo",
+    "gpt"
+  ],
+  "author": "Arthur Borges",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/arthurborgesdev/mmo-gpt/issues"
+  },
+  "homepage": "https://github.com/arthurborgesdev/mmo-gpt#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
