@@ -1,34 +1,34 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import { Configuration, OpenAIApi } from 'openai';
+import loadOpenAI from './loadOpenAI.js';
 import dotenv from 'dotenv';
+import { vectorizer } from './weaviate.js';
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT;
 
-function loadOpenAI() {
-  const configuration = new Configuration({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-
-  const openai = new OpenAIApi(configuration);
-  return openai;
-}
-
 app.use(bodyParser.json())
 
 app.post('/action', async (req, res) => {
   const openai = loadOpenAI();
-  const { message } = req.body;
-  
+  const { name, message } = req.body;
+
+  const gptMessage = {
+    role: "user",
+    content: `${name}: ${message}`,
+  }
+
   try {
     const completion = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
-      messages: [{role: "user", content: message}],
+      messages: [
+        gptMessage,
+      ],
     });
-    console.log(completion.data.choices[0].message);
+    vectorizer('Action', gptMessage);
+    vectorizer('Response', completion.data.choices[0].message);
     res.send(completion.data.choices[0].message);
   } catch (e) {
     console.error(e);
