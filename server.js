@@ -1,34 +1,60 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import { Configuration, OpenAIApi } from 'openai';
+import loadOpenAI from './loadOpenAI.js';
 import dotenv from 'dotenv';
+import weaviate from './weaviate/index.js';
+import fs from 'fs';
+
+import { vectorize, getObject } from './weaviate/utils.js';
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT;
 
-function loadOpenAI() {
-  const configuration = new Configuration({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-
-  const openai = new OpenAIApi(configuration);
-  return openai;
-}
-
 app.use(bodyParser.json())
+
+app.use('/weaviate', weaviate);
+
+let prompt = '';
+
+  try {
+    const data = fs.readFileSync('prompt.txt', 'utf8');
+    prompt = data.toString();
+  } catch(e) {
+    console.log('Error:', e.stack);
+  }
 
 app.post('/action', async (req, res) => {
   const openai = loadOpenAI();
-  const { message } = req.body;
-  
+  const { name, content } = req.body;
+
+  const systemMessage = {
+    role: "system",
+    content: prompt,
+  }
+
+  const userMessage = {
+    role: "user",
+    name,
+    content,
+  }
+
   try {
+    const weaviateObjects = await getObject('Context', 'name role content') || [];
+    const context = weaviateObjects?.data?.Get?.Context || [];
     const completion = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
-      messages: [{role: "user", content: message}],
+      messages: [
+        systemMessage,
+        ...context,
+        userMessage,
+      ],
     });
-    console.log(completion.data.choices[0].message);
+    const gptMessage = completion.data.choices[0].message;
+    gptMessage.name = "gpt";
+    vectorize('Context', userMessage);
+    vectorize('Context', gptMessage);
     res.send(completion.data.choices[0].message);
   } catch (e) {
     console.error(e);
