@@ -27,7 +27,7 @@ let prompt = '';
 
 app.post('/action', async (req, res) => {
   const openai = loadOpenAI();
-  const { name, message } = req.body;
+  const { name, content } = req.body;
 
   const systemMessage = {
     role: "system",
@@ -36,8 +36,8 @@ app.post('/action', async (req, res) => {
 
   const userMessage = {
     role: "user",
-    name: name,
-    content: message,
+    name,
+    content,
   }
 
   try {
@@ -51,8 +51,10 @@ app.post('/action', async (req, res) => {
         userMessage,
       ],
     });
+    const gptMessage = completion.data.choices[0].message;
+    gptMessage.name = "gpt";
     vectorize('Context', userMessage);
-    vectorize('Context', completion.data.choices[0].message);
+    vectorize('Context', gptMessage);
     res.send(completion.data.choices[0].message);
   } catch (e) {
     console.error(e);
