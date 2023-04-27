@@ -4,7 +4,7 @@ import loadOpenAI from './loadOpenAI.js';
 import dotenv from 'dotenv';
 import weaviate from './weaviate/index.js';
 
-import { gptCompletion } from './gpt/gptCompletion.js';
+import { getGptCompletion, gptSummarize } from './gpt/gptCompletion.js';
 
 dotenv.config();
 
@@ -18,8 +18,8 @@ app.use('/weaviate', weaviate);
 app.post('/action', async (req, res) => {
   const { name, content } = req.body;
   const openai = loadOpenAI();
-
-  const data = await gptCompletion(name, content, openai);
+  const data = await gptSummarize(openai);
+  //const data = await getGptCompletion(openai, name, content);
 
   res.send(data);
 });

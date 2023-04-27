@@ -1,15 +1,18 @@
 import fs from 'fs';
 import { vectorize, getObject } from '../weaviate/utils.js';
 
-export async function gptCompletion(name, content, openai) {
-  let prompt = '';
-
+function loadPrompt(file) {
   try {
-    const data = fs.readFileSync('prompt.txt', 'utf8');
-    prompt = data.toString();
+    const data = fs.readFileSync(file, 'utf8');
+    return data.toString();
   } catch(e) {
     console.log('Error:', e.stack);
+    return '';
   }
+}
+
+export async function getGptCompletion(openai, name, content) {
+  const prompt = loadPrompt('prompt.txt');
 
   const systemMessage = {
     role: "system",
@@ -36,6 +39,25 @@ export async function gptCompletion(name, content, openai) {
     const gptMessage = completion.data.choices[0].message;
     gptMessage.name = "gpt";
     vectorize('Context', userMessage);
+    return gptMessage;
+  } catch (e) {
+    return e;
+  }
+}
+
+export async function gptSummarize(openai) {
+  const prompt = loadPrompt('summary.txt');
+
+  try {
+    const weaviateObjects = await getObject('Context', 'name role content') || [];
+    const context = weaviateObjects?.data?.Get?.Context || [];
+    let content = '';
+    context.forEach(item => content += `${item.content} `);
+    const completion = await openai.createCompletion({
+      model: "text-davinci-003",
+      prompt: `${prompt} ${content}`,
+    });
+    const gptMessage = completion.data.choices[0].text;
     return gptMessage;
   } catch (e) {
     return e;
